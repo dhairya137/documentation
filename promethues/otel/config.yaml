@@ -1,0 +1,119 @@
+extensions:
+  health_check: {}
+  pprof: {}
+  zpages: {}
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'otel-collector'
+          scrape_interval: 60s
+          static_configs:
+            - targets: ['0.0.0.0:8888']
+
+  hostmetrics:
+    collection_interval: 60s
+    scrapers:
+      cpu: {}
+      disk: {}
+      load: {}
+      filesystem: {}
+      memory: {}
+      network: {}
+      paging: {}
+      process:
+        mute_process_name_error: true
+        mute_process_exe_error: true
+        mute_process_io_error: true
+      processes: {}
+
+processors:
+  batch:
+    send_batch_size: 1000
+    timeout: 15s
+
+  resourcedetection:
+    detectors: [env, system]
+    timeout: 2s
+    system:
+      hostname_sources: [os]
+
+exporters:
+  logging:
+    verbosity: normal
+
+  prometheusremotewrite:
+    endpoint: "http://ip:9090/api/v1/write"
+
+  loki:
+    endpoint: "http://ip:3100/loki/api/v1/push"
+
+  otlp/data-prepper-traces:
+    endpoint: "ip:21890"
+    tls:
+      insecure: true
+      insecure_skip_verify: true
+
+  otlp/data-prepper-metrics:
+    endpoint: "ip:21891"
+    tls:
+      insecure: true
+      insecure_skip_verify: true
+
+  otlp/data-prepper-logs:
+    endpoint: "ip:21892"
+    tls:
+      insecure: true
+      insecure_skip_verify: true
+
+  otlphttp/openobserve:
+    endpoint: "http://ip:5080/api/default"
+    headers:
+      Authorization: "Basic <token>"
+      stream-name: default
+
+  otlp/signoz:
+    endpoint: "localhost:4327"
+    tls:
+     insecure: true
+
+service:
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888
+
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters:
+        - logging
+        - otlp/data-prepper-traces
+        - otlphttp/openobserve
+        - otlp/signoz
+
+    metrics:
+      receivers: [otlp, prometheus, hostmetrics]
+      processors: [resourcedetection, batch]
+      exporters:
+        - prometheusremotewrite
+        - otlp/data-prepper-metrics
+        - otlphttp/openobserve
+        - otlp/signoz
+
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters:
+        - loki
+        - otlp/data-prepper-logs
+        - otlphttp/openobserve
+        - otlp/signoz
