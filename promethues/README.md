@@ -14,7 +14,7 @@
 - [Service Setup](#service-setup)
 - [Integration](#integration-setup)
 - [Validation](#validation)
-
+- [Screenshots](#screenshots)
 
 ## Architecture Overview
 
@@ -266,11 +266,12 @@ sudo journalctl -u grafana-server -f
 ```
 
 ## Screenshots
+Promethues Target
+![Promethues Target](./screenshots/promethues_targets.png)
+
 Grafana Server Monitoring
 ![Grafana Server Monitoring](./screenshots/grafana_server_monitoring.png)
 
 Loki Logs
 ![Loki Logs](./screenshots/loki_logs.png)
 
-Promethues Target
-![Promethues Target](./screenshots/promethues_targets.png)
